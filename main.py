@@ -59,7 +59,7 @@ async def get_server_status():
     return status_resp
 
 
-async def start_server(update: Update, context):
+async def serv_start(update: Update, context):
     try:
         sess = await login_to_aternos()
         status_data = await get_server_status()
@@ -75,7 +75,7 @@ async def start_server(update: Update, context):
         await update.effective_message.reply_text(f"💥 Ошибка: {e}")
 
 
-async def stop_server(update: Update, context):
+async def serv_stop(update: Update, context):
     try:
         sess = await login_to_aternos()
         status_data = await get_server_status()
@@ -113,8 +113,8 @@ async def check_status(update: Update, context):
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler("start_server", start_server))
-    app.add_handler(CommandHandler("stop_server", stop_server))
+    app.add_handler(CommandHandler("serv_start", serv_start))
+    app.add_handler(CommandHandler("serv_stop", serv_stop))
     app.add_handler(CommandHandler("status", check_status))
 
     print("🚀 Бот запущен на polling...")
