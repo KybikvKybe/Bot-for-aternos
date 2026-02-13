@@ -1,8 +1,8 @@
 import os
 import re
 import requests
-from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram import Update
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -60,7 +60,7 @@ def get_server_status():
     return status_resp
 
 
-def serv_start(update: Update, context):
+def serv_start(update: Update, context: CallbackContext):
     try:
         sess = login_to_aternos()
         status_data = get_server_status()
@@ -68,14 +68,14 @@ def serv_start(update: Update, context):
 
         start_resp = sess.get(f"https://aternos.org/server/start/{server_id}.ajax").json()
         if start_resp.get("success"):
-            update.effective_message.reply_text("✅ Сервер запущен!")
+            update.message.reply_text("✅ Сервер запущен!")
         else:
-            update.effective_message.reply_text("❌ Ошибка при запуске сервера.")
+            update.message.reply_text("❌ Ошибка при запуске сервера.")
     except Exception as e:
-        update.effective_message.reply_text(f"💥 Ошибка: {e}")
+        update.message.reply_text(f"💥 Ошибка: {e}")
 
 
-def serv_stop(update: Update, context):
+def serv_stop(update: Update, context: CallbackContext):
     try:
         sess = login_to_aternos()
         status_data = get_server_status()
@@ -83,14 +83,14 @@ def serv_stop(update: Update, context):
 
         stop_resp = sess.get(f"https://aternos.org/server/stop/{server_id}.ajax").json()
         if stop_resp.get("success"):
-            update.effective_message.reply_text("🔴 Сервер выключен.")
+            update.message.reply_text("🔴 Сервер выключен.")
         else:
-            update.effective_message.reply_text("❌ Ошибка при выключении сервера.")
+            update.message.reply_text("❌ Ошибка при выключении сервера.")
     except Exception as e:
-        update.effective_message.reply_text(f"💥 Ошибка: {e}")
+        update.message.reply_text(f"💥 Ошибка: {e}")
 
 
-def check_status(update: Update, context):
+def check_status(update: Update, context: CallbackContext):
     try:
         status_data = get_server_status()
         status = status_data["status"]
@@ -104,13 +104,13 @@ def check_status(update: Update, context):
 🔹 Игроков онлайн: {players}
 🔹 IP: {ip}:{port}
         """
-        update.effective_message.reply_text(msg)
+        update.message.reply_text(msg)
     except Exception as e:
-        update.effective_message.reply_text(f"💥 Ошибка: {e}")
+        update.message.reply_text(f"💥 Ошибка: {e}")
 
 
 def main():
-    updater = Updater(token=os.getenv("BOT_TOKEN"), use_context=True)
+    updater = Updater(token=BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("serv_start", serv_start))
@@ -124,5 +124,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
