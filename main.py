@@ -110,7 +110,7 @@ def check_status(update: Update, context):
 
 
 def main():
-    updater = Updater(token=BOT_TOKEN, use_context=True)
+    updater = Updater(token="BOT_TOKEN", use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("serv_start", serv_start))
@@ -124,3 +124,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
