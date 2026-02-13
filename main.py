@@ -3,6 +3,7 @@ import re
 import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+import asyncio
 
 # === TELEGRAM CONFIG ===
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -119,9 +120,11 @@ def main():
     app.add_handler(CommandHandler("status", check_status))
 
     print("🚀 Бот запущен на polling...")
-    app.run_polling()
+    # Запуск без Updater
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(app.run_polling(drop_pending_updates=True))
 
 
 if __name__ == "__main__":
-
     main()
