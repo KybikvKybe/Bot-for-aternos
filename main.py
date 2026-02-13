@@ -2,8 +2,10 @@ import os
 import re
 import requests
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
-import asyncio
+from telegram.ext import Updater, CommandHandler, CallbackContext
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 # === TELEGRAM CONFIG ===
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -18,7 +20,7 @@ ATERNOS_SERVER_NAME = os.getenv("ATERNOS_SERVER_NAME")
 session = None
 
 
-async def login_to_aternos():
+def login_to_aternos():
     global session
     if session:
         return session
@@ -26,13 +28,11 @@ async def login_to_aternos():
     session = requests.Session()
     login_url = "https://aternos.org/login"
     resp = session.get(login_url)
-    # Извлекаем токен
     token_match = re.search(r'"token"\s*:\s*"([^"]+)"', resp.text)
     if not token_match:
         raise Exception("Не удалось получить токен авторизации.")
     token = token_match.group(1)
 
-    # Авторизация
     login_data = {
         "user": ATERNOS_USER,
         "password": ATERNOS_PASS,
@@ -47,8 +47,8 @@ async def login_to_aternos():
     return session
 
 
-async def get_server_status():
-    sess = await login_to_aternos()
+def get_server_status():
+    sess = login_to_aternos()
     servers_page = sess.get("https://aternos.org/servers").text
     server_id_match = re.search(rf'data-server="([^"]*)"[^>]*title="{re.escape(ATERNOS_SERVER_NAME)}"', servers_page)
     if not server_id_match:
@@ -60,41 +60,39 @@ async def get_server_status():
     return status_resp
 
 
-async def serv_start(update: Update, context):
+def serv_start(update: Update, context):
     try:
-        sess = await login_to_aternos()
-        status_data = await get_server_status()
+        sess = login_to_aternos()
+        status_data = get_server_status()
         server_id = status_data["id"]
 
-        # Запускаем
         start_resp = sess.get(f"https://aternos.org/server/start/{server_id}.ajax").json()
         if start_resp.get("success"):
-            await update.effective_message.reply_text("✅ Сервер запущен!")
+            update.effective_message.reply_text("✅ Сервер запущен!")
         else:
-            await update.effective_message.reply_text("❌ Ошибка при запуске сервера.")
+            update.effective_message.reply_text("❌ Ошибка при запуске сервера.")
     except Exception as e:
-        await update.effective_message.reply_text(f"💥 Ошибка: {e}")
+        update.effective_message.reply_text(f"💥 Ошибка: {e}")
 
 
-async def serv_stop(update: Update, context):
+def serv_stop(update: Update, context):
     try:
-        sess = await login_to_aternos()
-        status_data = await get_server_status()
+        sess = login_to_aternos()
+        status_data = get_server_status()
         server_id = status_data["id"]
 
-        # Останавливаем
         stop_resp = sess.get(f"https://aternos.org/server/stop/{server_id}.ajax").json()
         if stop_resp.get("success"):
-            await update.effective_message.reply_text("🔴 Сервер выключен.")
+            update.effective_message.reply_text("🔴 Сервер выключен.")
         else:
-            await update.effective_message.reply_text("❌ Ошибка при выключении сервера.")
+            update.effective_message.reply_text("❌ Ошибка при выключении сервера.")
     except Exception as e:
-        await update.effective_message.reply_text(f"💥 Ошибка: {e}")
+        update.effective_message.reply_text(f"💥 Ошибка: {e}")
 
 
-async def check_status(update: Update, context):
+def check_status(update: Update, context):
     try:
-        status_data = await get_server_status()
+        status_data = get_server_status()
         status = status_data["status"]
         players = status_data["players"]["online"]
         ip = status_data["ip"]
@@ -106,24 +104,22 @@ async def check_status(update: Update, context):
 🔹 Игроков онлайн: {players}
 🔹 IP: {ip}:{port}
         """
-        await update.effective_message.reply_text(msg)
+        update.effective_message.reply_text(msg)
     except Exception as e:
-        await update.effective_message.reply_text(f"💥 Ошибка: {e}")
+        update.effective_message.reply_text(f"💥 Ошибка: {e}")
 
 
 def main():
-    print(f"TOKEN DEBUG: '{BOT_TOKEN}'")
-    app = Application.builder().token(BOT_TOKEN).build()
+    updater = Updater(token=BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
 
-    app.add_handler(CommandHandler("serv_start", serv_start))
-    app.add_handler(CommandHandler("serv_stop", serv_stop))
-    app.add_handler(CommandHandler("status", check_status))
+    dp.add_handler(CommandHandler("serv_start", serv_start))
+    dp.add_handler(CommandHandler("serv_stop", serv_stop))
+    dp.add_handler(CommandHandler("status", check_status))
 
     print("🚀 Бот запущен на polling...")
-    # Запуск без Updater
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(app.run_polling(drop_pending_updates=True))
+    updater.start_polling(drop_pending_updates=True)
+    updater.idle()
 
 
 if __name__ == "__main__":
