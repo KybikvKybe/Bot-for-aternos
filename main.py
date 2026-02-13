@@ -2,23 +2,20 @@ import os
 import re
 import requests
 from telegram import Update
-from telegram.ext import Application, ContextTypes
-from flask import Flask, request
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 # === TELEGRAM CONFIG ===
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Пример: https://mybot.fly.dev/webhook
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")  # ID админа или канала
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 
 # === ATERNOS CONFIG ===
-ATERNOS_USER = os.getenv("ATERNOS_USER")  # Логин
-ATERNOS_PASS = os.getenv("ATERNOS_PASS")  # Пароль
-ATERNOS_SERVER_NAME = os.getenv("ATERNOS_SERVER_NAME")  # Имя сервера
+ATERNOS_USER = os.getenv("ATERNOS_USER")
+ATERNOS_PASS = os.getenv("ATERNOS_PASS")
+ATERNOS_SERVER_NAME = os.getenv("ATERNOS_SERVER_NAME")
 
 # === GLOBAL VARS ===
 session = None
 
-app = Flask(__name__)
 
 async def login_to_aternos():
     global session
@@ -113,19 +110,16 @@ async def check_status(update: Update, context):
         await update.effective_message.reply_text(f"💥 Ошибка: {e}")
 
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    update_json = request.get_json()
-    update = Update.de_json(update_json)
-    app_bot.process_update(update)
-    return "OK"
+def main():
+    app = Application.builder().token(BOT_TOKEN).build()
+
+    app.add_handler(CommandHandler("start_server", start_server))
+    app.add_handler(CommandHandler("stop_server", stop_server))
+    app.add_handler(CommandHandler("status", check_status))
+
+    print("🚀 Бот запущен на polling...")
+    app.run_polling()
 
 
 if __name__ == "__main__":
-    app_bot = Application.builder().token(BOT_TOKEN).build()
-
-    app_bot.add_handler(CommandHandler("start_server", start_server))
-    app_bot.add_handler(CommandHandler("stop_server", stop_server))
-    app_bot.add_handler(CommandHandler("status", check_status))
-
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+    main()
