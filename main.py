@@ -111,6 +111,7 @@ async def check_status(update: Update, context):
 
 
 def main():
+    print(f"TOKEN DEBUG: '{BOT_TOKEN}'")
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("serv_start", serv_start))
@@ -122,4 +123,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
